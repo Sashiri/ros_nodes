@@ -18,11 +18,8 @@ class RosPublisher<MessageType extends RosMessage> {
   String get topic => _topic;
   MessageType get topicType => _type;
 
-  RosPublisher(
-      {String nodeName,
-      String topic,
-      MessageType topicType,
-      Duration publishInterval}) {
+  RosPublisher(String nodeName, String topic, MessageType topicType,
+      {Duration publishInterval}) {
     _nodeName = nodeName;
     _topic = topic;
     _type = topicType;
