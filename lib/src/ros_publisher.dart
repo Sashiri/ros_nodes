@@ -29,7 +29,7 @@ class RosPublisher<Message extends RosMessage> {
       _tcpros_server = server;
       server.listen((socket) {
         socket.listen((data) {
-          socket.add(_tcpros_header());
+          socket.add(_tcprosHeader());
           _publishSockets.add(socket);
         });
       });
@@ -49,11 +49,12 @@ class RosPublisher<Message extends RosMessage> {
     });
   }
 
-  List<int> _tcpros_header() {
+  List<int> _tcprosHeader() {
     var messageHeader = type.binaryHeader;
+    var fullSize = messageHeader.length;
 
     var header = <int>[];
-    header.addAll(messageHeader.length.toBytes());
+    header.addAll(fullSize.toBytes());
     header.addAll(messageHeader);
     return header;
   }
@@ -82,9 +83,8 @@ class RosPublisher<Message extends RosMessage> {
         '${type.message_type}',
         'http://${_server.host}:${_server.port}/'
       ]);
-      print(result);
     } catch (e) {
-      print(e);
+      //TODO: Error while registering
     }
   }
 
@@ -94,9 +94,8 @@ class RosPublisher<Message extends RosMessage> {
           'http://DESKTOP-L2R4GKN:11311',
           'unregisterPublisher',
           ['/$nodeName', '/$topic', 'http://${_server.host}:${_server.port}/']);
-      print(result);
     } catch (e) {
-      print(e);
+      //TODO: Error while registering
     }
   }
 }

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:ros_nodes/src/type_apis/int_apis.dart';
+import 'type_apis/int_apis.dart';
 
 abstract class BinaryConvertable {
   List<int> toBytes();
@@ -11,6 +11,8 @@ abstract class RosMessage implements BinaryConvertable {
   String _message_definition;
   String _message_type;
   String _type_md5;
+
+  List<BinaryConvertable> params = [];
 
   String get message_definition => _message_definition;
   String get message_type => _message_type;
@@ -30,8 +32,6 @@ abstract class RosMessage implements BinaryConvertable {
     bytes.addAll(utf8.encode(type_md5));
     return bytes;
   }
-
-  List<BinaryConvertable> params = [];
 
   RosMessage(String message_definition, String message_type, String type_md5) {
     _message_definition = message_definition;

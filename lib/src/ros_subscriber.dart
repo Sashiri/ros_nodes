@@ -23,22 +23,22 @@ class RosSubscriber<Message extends RosMessage> {
     _server.startServer();
   }
 
-  List<int> _tcpros_header() {
+  List<int> _tcprosHeader() {
     final callerId = 'callerid=/$nodeName';
     final tcpNoDelay = 'tcp_nodelay=0';
     final topic = 'topic=/${this.topic}';
 
     var messageHeader = type.binaryHeader;
+    var fullSize = messageHeader.length +
+        4 +
+        callerId.length +
+        4 +
+        topic.length +
+        4 +
+        tcpNoDelay.length;
 
     var header = <int>[];
-    header.addAll((messageHeader.length +
-            4 +
-            callerId.length +
-            4 +
-            topic.length +
-            4 +
-            tcpNoDelay.length)
-        .toBytes());
+    header.addAll(fullSize.toBytes());
     header.addAll(messageHeader);
     header.addAll(callerId.length.toBytes());
     header.addAll(utf8.encode(callerId));
@@ -53,8 +53,8 @@ class RosSubscriber<Message extends RosMessage> {
     //TODO: values[0] is name of the node calling api
     //TODO: values[0] is operation result if called master
 
-    _tcprosConnections.removeWhere((x, connection) {
-      final remove = !(values[2] as List).contains(x);
+    _tcprosConnections.removeWhere((apiAddress, connection) {
+      final remove = !(values[2] as List).contains(apiAddress);
       if (remove) {
         connection.close();
       }
@@ -75,7 +75,7 @@ class RosSubscriber<Message extends RosMessage> {
         var socket =
             await Socket.connect(connectionValues[1], connectionValues[2]);
 
-        socket.add(_tcpros_header());
+        socket.add(_tcprosHeader());
 
         var done = false;
 
@@ -104,9 +104,8 @@ class RosSubscriber<Message extends RosMessage> {
         'http://${_server.host}:${_server.port}/'
       ]);
       await onPublisherUpdate(result);
-      print(result);
     } catch (e) {
-      print(e);
+      //TODO: Error while registering
     }
   }
 
@@ -116,9 +115,8 @@ class RosSubscriber<Message extends RosMessage> {
           'http://DESKTOP-L2R4GKN:11311',
           'unregisterSubscriber',
           ['/$nodeName', '/$topic', 'http://${_server.host}:${_server.port}/']);
-      print(result);
     } catch (e) {
-      print(e);
+      //TODO: Error while registering
     }
   }
 }
