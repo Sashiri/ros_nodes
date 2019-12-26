@@ -8,30 +8,21 @@ import 'ros_message.dart';
 import 'type_apis/int_apis.dart';
 
 //TODO: RosSubscriber uses static MASTER hostname
-class RosPublisher<MessageType extends RosMessage> {
-  String _nodeName;
-  String _topic;
-  MessageType _type;
-  XmlRpcServer _server;
-  ServerSocket _tcpros_server;
+class RosPublisher<Message extends RosMessage> {
+  final String nodeName;
+  final String topic;
+  final Message type;
   final List<Socket> _publishSockets = <Socket>[];
 
-  String get topic => _topic;
-  MessageType get topicType => _type;
+  XmlRpcServer _server;
+  ServerSocket _tcpros_server;
 
-  RosPublisher(String nodeName, String topic, MessageType topicType,
+  RosPublisher(this.nodeName, this.topic, this.type,
       {Duration publishInterval}) {
-    _nodeName = nodeName;
-    _topic = topic;
-    _type = topicType;
-
     var ip = '';
 
     _server = XmlRpcServer(host: InternetAddress.anyIPv4, port: 54231);
     _server.bind('requestTopic', onTopicRequest);
-    _server.bind('publisherUpdate', (_) async {
-      return generateXmlResponse([1]);
-    });
     _server.startServer();
 
     ServerSocket.bind(InternetAddress.loopbackIPv4, 33241).then((server) {
@@ -51,7 +42,7 @@ class RosPublisher<MessageType extends RosMessage> {
   void publishData() {
     _publishSockets.forEach((socket) {
       var packet = <int>[];
-      var data = topicType.toBytes();
+      var data = type.toBytes();
       packet.addAll((data.length).toBytes());
       packet.addAll(data);
       socket.add(packet);
@@ -59,7 +50,7 @@ class RosPublisher<MessageType extends RosMessage> {
   }
 
   List<int> _tcpros_header() {
-    var messageHeader = _type.binaryHeader;
+    var messageHeader = type.binaryHeader;
 
     var header = <int>[];
     header.addAll(messageHeader.length.toBytes());
@@ -86,9 +77,9 @@ class RosPublisher<MessageType extends RosMessage> {
     try {
       final result = await xml_rpc
           .call('http://DESKTOP-L2R4GKN:11311/', 'registerPublisher', [
-        '/$_nodeName',
-        '/$_topic',
-        '${_type.message_type}',
+        '/$nodeName',
+        '/$topic',
+        '${type.message_type}',
         'http://${_server.host}:${_server.port}/'
       ]);
       print(result);
@@ -100,11 +91,9 @@ class RosPublisher<MessageType extends RosMessage> {
   void unregister() async {
     try {
       final result = await xml_rpc.call(
-          'http://DESKTOP-L2R4GKN:11311', 'unregisterPublisher', [
-        '/$_nodeName',
-        '/$_topic',
-        'http://${_server.host}:${_server.port}/'
-      ]);
+          'http://DESKTOP-L2R4GKN:11311',
+          'unregisterPublisher',
+          ['/$nodeName', '/$topic', 'http://${_server.host}:${_server.port}/']);
       print(result);
     } catch (e) {
       print(e);
