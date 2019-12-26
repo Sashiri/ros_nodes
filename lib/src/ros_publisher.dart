@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'ros_message.dart';
 import 'package:xmlrpc_server/xmlrpc_server.dart';
 import 'package:xml_rpc/client.dart' as xml_rpc;
-import 'package:xml/xml.dart' as xml;
-import 'package:ros_nodes/src/type_apis/int_apis.dart';
+import 'package:xml/xml.dart';
+
+import 'ros_message.dart';
+import 'type_apis/int_apis.dart';
 
 //TODO: RosSubscriber uses static MASTER hostname
 class RosPublisher<MessageType extends RosMessage> {
@@ -66,7 +67,7 @@ class RosPublisher<MessageType extends RosMessage> {
     return header;
   }
 
-  Future<xml.XmlDocument> onTopicRequest(List<dynamic> values) async {
+  Future<XmlDocument> onTopicRequest(List<dynamic> values) async {
     final requestedSettings = values[2][0];
     if (requestedSettings.contains('TCPROS')) {
       return generateXmlResponse([

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:xmlrpc_server/xmlrpc_server.dart';
 import 'package:xml_rpc/client.dart' as xml_rpc;
-import 'package:xml/xml.dart' as xml;
+import 'package:xml/xml.dart';
 
 import 'type_apis/int_apis.dart';
 import 'ros_message.dart';
@@ -55,7 +55,7 @@ class RosSubscriber<MessageType extends RosMessage> {
     return header;
   }
 
-  Future<xml.XmlDocument> onPublisherUpdate(List<dynamic> values) async {
+  Future<XmlDocument> onPublisherUpdate(List<dynamic> values) async {
     //TODO: values[0] is name of the node calling api
     //TODO: values[0] is operation result if called master
 
