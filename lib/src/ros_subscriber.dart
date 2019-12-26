@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
-import 'ros_message.dart';
 import 'package:xmlrpc_server/xmlrpc_server.dart';
 import 'package:xml_rpc/client.dart' as xml_rpc;
 import 'package:xml/xml.dart' as xml;
-import 'package:ros_nodes/src/type_apis/int_apis.dart';
+
+import 'type_apis/int_apis.dart';
+import 'ros_message.dart';
 
 //TODO: RosSubscriber uses static MASTER hostname
 class RosSubscriber<MessageType extends RosMessage> {
@@ -18,7 +19,7 @@ class RosSubscriber<MessageType extends RosMessage> {
   String get topic => _topic;
   MessageType get topicType => _type;
 
-  RosSubscriber({String nodeName, String topic, MessageType topicType}) {
+  RosSubscriber(String nodeName, String topic, MessageType topicType) {
     _nodeName = nodeName;
     _topic = topic;
     _type = topicType;
