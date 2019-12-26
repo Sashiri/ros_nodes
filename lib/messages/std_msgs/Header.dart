@@ -5,7 +5,7 @@ import 'package:ros_nodes/messages/Time.dart';
 
 class StdMsgsHeader extends RosMessage {
   final RosUInt32 _seq = RosUInt32();
-  final RosTime _time = RosTime();
+  final RosTime _stamp = RosTime();
   final RosString _frame_id = RosString();
 
   int get seq => _seq.val;
@@ -13,7 +13,7 @@ class StdMsgsHeader extends RosMessage {
     _seq.val = value;
   }
 
-  RosTime get time => _time;
+  RosTime get stamp => _stamp;
 
   String get frame_id => _frame_id.val;
   set frame_id(String value) {
@@ -24,7 +24,7 @@ class StdMsgsHeader extends RosMessage {
       : super('header data', 'std_msgs/Header',
             '2176decaecbce78abc3b96ef049fabed') {
     params.add(_seq);
-    params.add(_time);
+    params.add(_stamp);
     params.add(_frame_id);
   }
 }
