@@ -8,33 +8,27 @@ import 'type_apis/int_apis.dart';
 import 'ros_message.dart';
 
 //TODO: RosSubscriber uses static MASTER hostname
-class RosSubscriber<MessageType extends RosMessage> {
-  String _nodeName;
-  String _topic;
-  MessageType _type;
-  XmlRpcServer _server;
+class RosSubscriber<Message extends RosMessage> {
+  final String nodeName;
+  final String topic;
+  final Message type;
   final Map<String, Socket> _tcprosConnections = {};
+
+  XmlRpcServer _server;
   Function onValueUpdate;
 
-  String get topic => _topic;
-  MessageType get topicType => _type;
-
-  RosSubscriber(String nodeName, String topic, MessageType topicType) {
-    _nodeName = nodeName;
-    _topic = topic;
-    _type = topicType;
-
+  RosSubscriber(this.nodeName, this.topic, this.type) {
     _server = XmlRpcServer(host: InternetAddress.anyIPv4, port: 21451);
     _server.bind('publisherUpdate', onPublisherUpdate);
     _server.startServer();
   }
 
   List<int> _tcpros_header() {
-    final callerId = 'callerid=/$_nodeName';
+    final callerId = 'callerid=/$nodeName';
     final tcpNoDelay = 'tcp_nodelay=0';
-    final topic = 'topic=/$_topic';
+    final topic = 'topic=/${this.topic}';
 
-    var messageHeader = _type.binaryHeader;
+    var messageHeader = type.binaryHeader;
 
     var header = <int>[];
     header.addAll((messageHeader.length +
@@ -69,8 +63,8 @@ class RosSubscriber<MessageType extends RosMessage> {
 
     for (var connection in values[2]) {
       final response = await xml_rpc.call(connection, 'requestTopic', [
-        '/$_nodeName',
-        '/$_topic',
+        '/$nodeName',
+        '/$topic',
         [
           ['TCPROS']
         ]
@@ -90,7 +84,7 @@ class RosSubscriber<MessageType extends RosMessage> {
             done = true;
             return;
           }
-          topicType.fromBytes(data, offset: 4);
+          type.fromBytes(data, offset: 4);
           if (onValueUpdate != null) onValueUpdate();
         });
 
@@ -104,9 +98,9 @@ class RosSubscriber<MessageType extends RosMessage> {
     try {
       final result = await xml_rpc
           .call('http://DESKTOP-L2R4GKN:11311/', 'registerSubscriber', [
-        '/$_nodeName',
-        '/$_topic',
-        '${_type.message_type}',
+        '/$nodeName',
+        '/$topic',
+        '${type.message_type}',
         'http://${_server.host}:${_server.port}/'
       ]);
       await onPublisherUpdate(result);
@@ -119,11 +113,9 @@ class RosSubscriber<MessageType extends RosMessage> {
   void unsubscribe() async {
     try {
       final result = await xml_rpc.call(
-          'http://DESKTOP-L2R4GKN:11311', 'unregisterSubscriber', [
-        '/$_nodeName',
-        '/$_topic',
-        'http://${_server.host}:${_server.port}/'
-      ]);
+          'http://DESKTOP-L2R4GKN:11311',
+          'unregisterSubscriber',
+          ['/$nodeName', '/$topic', 'http://${_server.host}:${_server.port}/']);
       print(result);
     } catch (e) {
       print(e);
