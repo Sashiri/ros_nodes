@@ -3,6 +3,8 @@
 /// More dartdocs go here.
 library ros_nodes;
 
-export 'src/ros_nodes_base.dart';
+export 'src/ros_message.dart';
+export 'src/ros_publisher.dart';
+export 'src/ros_subscriber.dart';
 
 // TODO: Export any libraries intended for clients of this package.
