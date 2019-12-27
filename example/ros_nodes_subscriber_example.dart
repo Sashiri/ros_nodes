@@ -6,7 +6,6 @@ void main() {
   var subscriber =
       RosSubscriber('ros_nodes_example_subscriber', 'chatter', msg);
   subscriber.subscribe();
-  subscriber.onValueUpdate = () {
-    print(msg.data);
-  };
+  subscriber.onValueUpdate.listen((type) => print('Listener 1: ${type.data}'));
+  subscriber.onValueUpdate.listen((_) => print('Listener 2: ${msg.data}'));
 }

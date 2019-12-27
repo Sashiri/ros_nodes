@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:xmlrpc_server/xmlrpc_server.dart';
 import 'package:xml_rpc/client.dart' as xml_rpc;
 import 'package:xml/xml.dart';
 
-import 'type_apis/int_apis.dart';
 import 'ros_message.dart';
+import 'type_apis/int_apis.dart';
 
 //TODO: RosSubscriber uses static MASTER hostname
 class RosSubscriber<Message extends RosMessage> {
@@ -14,13 +15,17 @@ class RosSubscriber<Message extends RosMessage> {
   final Message type;
   final Map<String, Socket> _tcprosConnections = {};
 
+  Stream<Message> onValueUpdate;
+  StreamController<Message> valueUpdate;
   XmlRpcServer _server;
-  Function onValueUpdate;
 
   RosSubscriber(this.nodeName, this.topic, this.type) {
-    _server = XmlRpcServer(host: InternetAddress.anyIPv4, port: 21451);
+    _server = XmlRpcServer();
     _server.bind('publisherUpdate', onPublisherUpdate);
     _server.startServer();
+
+    valueUpdate = StreamController<Message>();
+    onValueUpdate = valueUpdate.stream.asBroadcastStream();
   }
 
   List<int> _tcprosHeader() {
@@ -85,7 +90,7 @@ class RosSubscriber<Message extends RosMessage> {
             return;
           }
           type.fromBytes(data, offset: 4);
-          if (onValueUpdate != null) onValueUpdate();
+          valueUpdate.add(type);
         });
 
         _tcprosConnections.putIfAbsent(connection, () => socket);
