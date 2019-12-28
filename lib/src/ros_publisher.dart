@@ -5,6 +5,7 @@ import 'package:xml_rpc/client.dart' as xml_rpc;
 import 'package:xml/xml.dart';
 
 import 'ros_message.dart';
+import 'ros_node.dart';
 import 'type_apis/int_apis.dart';
 
 //TODO: RosSubscriber uses static MASTER hostname
@@ -13,19 +14,20 @@ class RosPublisher<Message extends RosMessage> {
   final String topic;
   final Message type;
   final List<Socket> _publishSockets = <Socket>[];
+  final RosNode config;
 
   XmlRpcServer _server;
   ServerSocket _tcpros_server;
 
-  RosPublisher(this.nodeName, this.topic, this.type,
+  RosPublisher(this.nodeName, this.topic, this.type, this.config,
       {Duration publishInterval}) {
     var ip = '';
 
-    _server = XmlRpcServer(host: InternetAddress.anyIPv4, port: 54231);
+    _server = XmlRpcServer(host: InternetAddress(config.ip), port: config.port);
     _server.bind('requestTopic', onTopicRequest);
     _server.startServer();
 
-    ServerSocket.bind(InternetAddress.loopbackIPv4, 33241).then((server) {
+    ServerSocket.bind(InternetAddress(config.ip), 33241).then((server) {
       _tcpros_server = server;
       server.listen((socket) {
         socket.listen((data) {
@@ -76,8 +78,7 @@ class RosPublisher<Message extends RosMessage> {
 
   void register() async {
     try {
-      final result = await xml_rpc
-          .call('http://DESKTOP-L2R4GKN:11311/', 'registerPublisher', [
+      final result = await xml_rpc.call(config.masterUri, 'registerPublisher', [
         '/$nodeName',
         '/$topic',
         '${type.message_type}',
@@ -90,9 +91,7 @@ class RosPublisher<Message extends RosMessage> {
 
   void unregister() async {
     try {
-      final result = await xml_rpc.call(
-          'http://DESKTOP-L2R4GKN:11311',
-          'unregisterPublisher',
+      final result = await xml_rpc.call(config.masterUri, 'unregisterPublisher',
           ['/$nodeName', '/$topic', 'http://${_server.host}:${_server.port}/']);
     } catch (e) {
       //TODO: Error while registering

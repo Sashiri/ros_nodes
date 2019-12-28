@@ -7,6 +7,7 @@ import 'package:xml/xml.dart';
 
 import 'ros_message.dart';
 import 'type_apis/int_apis.dart';
+import 'ros_node.dart';
 
 //TODO: RosSubscriber uses static MASTER hostname
 class RosSubscriber<Message extends RosMessage> {
@@ -19,8 +20,9 @@ class RosSubscriber<Message extends RosMessage> {
   StreamController<Message> valueUpdate;
   XmlRpcServer _server;
 
-  RosSubscriber(this.nodeName, this.topic, this.type) {
-    _server = XmlRpcServer();
+  RosSubscriber(this.nodeName, this.topic, this.type, RosNode configuration) {
+    _server = XmlRpcServer(
+        host: InternetAddress(configuration.ip), port: configuration.port);
     _server.bind('publisherUpdate', onPublisherUpdate);
     _server.startServer();
 
