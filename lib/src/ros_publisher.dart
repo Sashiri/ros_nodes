@@ -21,13 +21,11 @@ class RosPublisher<Message extends RosMessage> {
 
   RosPublisher(this.nodeName, this.topic, this.type, this.config,
       {Duration publishInterval}) {
-    var ip = '';
-
-    _server = XmlRpcServer(host: InternetAddress(config.ip), port: config.port);
+    _server = XmlRpcServer(host: config.host, port: config.port);
     _server.bind('requestTopic', onTopicRequest);
     _server.startServer();
 
-    ServerSocket.bind(InternetAddress(config.ip), 33241).then((server) {
+    ServerSocket.bind(config.host, 33241).then((server) {
       _tcpros_server = server;
       server.listen((socket) {
         socket.listen((data) {

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:ros_nodes/src/ros_message.dart';
 
+import 'package:ros_nodes/src/type_apis/int_apis.dart';
+
 class RosString implements BinaryConvertable {
   String val;
 
@@ -19,7 +21,11 @@ class RosString implements BinaryConvertable {
 
   @override
   List<int> toBytes() {
-    return utf8.encode(val);
+    var bytes = <int>[];
+    var encoded = utf8.encode(val);
+    bytes.addAll(encoded.length.toBytes());
+    bytes.addAll(encoded);
+    return bytes;
   }
 
   @override

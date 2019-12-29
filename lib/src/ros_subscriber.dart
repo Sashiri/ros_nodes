@@ -21,8 +21,7 @@ class RosSubscriber<Message extends RosMessage> {
   XmlRpcServer _server;
 
   RosSubscriber(this.nodeName, this.topic, this.type, RosNode configuration) {
-    _server = XmlRpcServer(
-        host: InternetAddress(configuration.ip), port: configuration.port);
+    _server = XmlRpcServer(host: configuration.host, port: configuration.port);
     _server.bind('publisherUpdate', onPublisherUpdate);
     _server.startServer();
 
