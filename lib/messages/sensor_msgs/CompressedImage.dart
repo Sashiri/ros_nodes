@@ -21,7 +21,7 @@ class SensorMsgsCompressedImage extends RosMessage {
   }
 
   SensorMsgsCompressedImage()
-      : super('header data', 'std_msgs/Header',
+      : super('compressed image data', 'sensor_msgs/CompressedImage',
             '8f7a12909da2c9d3332d540a0977563f') {
     params.add(header);
     params.add(_format);
