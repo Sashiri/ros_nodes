@@ -20,10 +20,14 @@ class RosSubscriber<Message extends RosMessage> {
   StreamController<Message> valueUpdate;
   XmlRpcServer _server;
 
+  RosNode config;
+
   RosSubscriber(this.nodeName, this.topic, this.type, RosNode configuration) {
     _server = XmlRpcServer(host: configuration.host, port: configuration.port);
     _server.bind('publisherUpdate', onPublisherUpdate);
     _server.startServer();
+
+    config = configuration;
 
     valueUpdate = StreamController<Message>();
     onValueUpdate = valueUpdate.stream.asBroadcastStream();
@@ -102,8 +106,8 @@ class RosSubscriber<Message extends RosMessage> {
 
   void subscribe() async {
     try {
-      final result = await xml_rpc
-          .call('http://DESKTOP-L2R4GKN:11311/', 'registerSubscriber', [
+      final result =
+          await xml_rpc.call(config.masterUri, 'registerSubscriber', [
         '/$nodeName',
         '/$topic',
         '${type.message_type}',
@@ -118,7 +122,7 @@ class RosSubscriber<Message extends RosMessage> {
   void unsubscribe() async {
     try {
       final result = await xml_rpc.call(
-          'http://DESKTOP-L2R4GKN:11311',
+          config.masterUri,
           'unregisterSubscriber',
           ['/$nodeName', '/$topic', 'http://${_server.host}:${_server.port}/']);
     } catch (e) {
