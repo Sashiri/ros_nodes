@@ -4,7 +4,7 @@ import 'package:ros_nodes/src/ros_message.dart';
 import 'package:ros_nodes/messages/Time.dart';
 
 class StdMsgsHeader extends RosMessage {
-  final RosUInt32 _seq = RosUInt32();
+  final RosUint32 _seq = RosUint32();
   final RosTime stamp = RosTime();
   final RosString _frame_id = RosString();
 

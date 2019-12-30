@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 import 'package:ros_nodes/src/ros_message.dart';
 
-class RosUInt32 implements BinaryConvertable {
+class RosUint32 implements BinaryConvertable {
   int val;
 
-  RosUInt32({int value}) {
+  RosUint32({int value}) {
     val = value ?? 0;
   }
 
