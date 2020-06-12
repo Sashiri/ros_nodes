@@ -1,56 +1,79 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:xmlrpc_server/xmlrpc_server.dart';
-import 'package:xml_rpc/client.dart' as xml_rpc;
-import 'package:xml/xml.dart';
-
-import 'ros_message.dart';
-import 'ros_node.dart';
+import 'package:ros_nodes/src/protocol_info.dart';
+import 'package:ros_nodes/src/ros_topic.dart';
 import 'type_apis/int_apis.dart';
 
-//TODO: RosSubscriber uses static MASTER hostname
-class RosPublisher<Message extends RosMessage> {
-  final String nodeName;
-  final String topic;
-  final Message type;
-  final List<Socket> _publishSockets = <Socket>[];
-  final RosNode config;
+class RosPublisher {
+  final List<Socket> _subscribers = <Socket>[];
+  final RosTopic topic;
+  ServerSocket _tcprosServer;
+  Timer _publishTimer;
 
-  XmlRpcServer _server;
-  ServerSocket _tcpros_server;
-
-  RosPublisher(this.nodeName, this.topic, this.type, this.config,
-      {Duration publishInterval}) {
-    _server = XmlRpcServer(host: config.host, port: config.port);
-    _server.bind('requestTopic', onTopicRequest);
-    _server.startServer();
-
-    ServerSocket.bind(config.host, 33241).then((server) {
-      _tcpros_server = server;
-      server.listen((socket) {
-        socket.listen((data) {
-          socket.add(_tcprosHeader());
-          _publishSockets.add(socket);
-        });
-      });
-    });
-
-    Timer.periodic(
-        publishInterval ?? Duration(seconds: 1), (_) => publishData());
+  Duration _publishInterval;
+  Duration get publishInterval => _publishInterval;
+  set publishInterval(Duration value) {
+    _publishInterval = value;
+    _publishTimer?.cancel();
+    startPublishing();
   }
 
-  void publishData() {
-    _publishSockets.forEach((socket) {
+  int get port => _tcprosServer.port;
+
+  String get address => _tcprosServer.address.address;
+
+  RosPublisher(this.topic, String host, {int port, Duration publishInterval}) {
+    this.publishInterval = publishInterval ?? Duration(seconds: 1);
+    port ??= 0;
+
+    ServerSocket.bind(host, port).then((server) {
+      _tcprosServer = server;
+      server.listen((socket) {
+        socket.listen(
+          (data) {
+            socket.add(_tcprosHeader());
+            _subscribers.add(socket);
+          },
+          onDone: () => _subscribers.remove(socket),
+        );
+      });
+    });
+  }
+
+  void startPublishing() {
+    _publishTimer =
+        Timer.periodic(publishInterval, (_) async => await publishData());
+  }
+
+  void stopPublishing() {
+    _publishTimer.cancel();
+  }
+
+  Future close() async {
+    stopPublishing();
+    await Future.wait(_subscribers.map((subscriber) => subscriber.close()));
+    await _tcprosServer.close();
+    _tcprosServer = null;
+  }
+
+  Future publishData() async {
+    for (var subscriber in _subscribers) {
       var packet = <int>[];
-      var data = type.toBytes();
+      var data = topic.msg.toBytes();
       packet.addAll((data.length).toBytes());
       packet.addAll(data);
-      socket.add(packet);
-    });
+      try {
+        subscriber.add(packet);
+        await subscriber.flush();
+      } catch (err) {
+        print(err);
+      }
+    }
+    ;
   }
 
   List<int> _tcprosHeader() {
-    var messageHeader = type.binaryHeader;
+    var messageHeader = topic.msg.binaryHeader;
     var fullSize = messageHeader.length;
 
     var header = <int>[];
@@ -59,40 +82,11 @@ class RosPublisher<Message extends RosMessage> {
     return header;
   }
 
-  Future<XmlDocument> onTopicRequest(List<dynamic> values) async {
-    final requestedSettings = values[2][0];
-    if (requestedSettings.contains('TCPROS')) {
-      return generateXmlResponse([
-        [
-          1,
-          'ready on ${_tcpros_server.address.address}:${_tcpros_server.port}',
-          ['TCPROS', _tcpros_server.address.address, _tcpros_server.port]
-        ]
-      ]);
-    } else {
-      throw ArgumentError();
+  bool validateProtocolSettings(ProtocolInfo protocolInfo) {
+    switch (protocolInfo.name) {
+      case 'TCPROS':
+        return true;
     }
-  }
-
-  void register() async {
-    try {
-      final result = await xml_rpc.call(config.masterUri, 'registerPublisher', [
-        '/$nodeName',
-        '/$topic',
-        '${type.message_type}',
-        'http://${_server.host}:${_server.port}/'
-      ]);
-    } catch (e) {
-      //TODO: Error while registering
-    }
-  }
-
-  void unregister() async {
-    try {
-      final result = await xml_rpc.call(config.masterUri, 'unregisterPublisher',
-          ['/$nodeName', '/$topic', 'http://${_server.host}:${_server.port}/']);
-    } catch (e) {
-      //TODO: Error while registering
-    }
+    return false;
   }
 }

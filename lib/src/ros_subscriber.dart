@@ -1,44 +1,54 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:xmlrpc_server/xmlrpc_server.dart';
+import 'dart:typed_data';
+import 'package:ros_nodes/ros_nodes.dart';
+import 'package:ros_nodes/src/protocol_info.dart';
 import 'package:xml_rpc/client.dart' as xml_rpc;
-import 'package:xml/xml.dart';
 
-import 'ros_message.dart';
 import 'type_apis/int_apis.dart';
-import 'ros_node.dart';
+import 'ros_config.dart';
 
-//TODO: RosSubscriber uses static MASTER hostname
+List<String> decodeHeader(Uint8List header) {
+  var data = ByteData.view(header.buffer);
+  var size = data.getUint32(0, Endian.little);
+  var index = 4;
+  var decodedHeader = <String>[];
+  while (index < size) {
+    var size = data.getUint32(index, Endian.little);
+    index += 4;
+    var param = utf8.decode(header.sublist(index, index + size));
+    decodedHeader.add(param);
+    index += size;
+  }
+  return decodedHeader;
+}
+
+extension IterableExtension<T> on Iterable<T> {
+  T firstOrNull() {
+    return firstWhere((_) => false, orElse: () => null);
+  }
+}
+
 class RosSubscriber<Message extends RosMessage> {
-  final String nodeName;
-  final String topic;
-  final Message type;
-  final Map<String, Socket> _tcprosConnections = {};
+  final Map<String, Socket> _connections = {};
+  StreamController<Message> _valueUpdate;
+  RosConfig config;
 
+  final RosTopic topic;
   Stream<Message> onValueUpdate;
-  StreamController<Message> valueUpdate;
-  XmlRpcServer _server;
 
-  RosNode config;
-
-  RosSubscriber(this.nodeName, this.topic, this.type, RosNode configuration) {
-    _server = XmlRpcServer(host: configuration.host, port: configuration.port);
-    _server.bind('publisherUpdate', onPublisherUpdate);
-    _server.startServer();
-
-    config = configuration;
-
-    valueUpdate = StreamController<Message>();
-    onValueUpdate = valueUpdate.stream.asBroadcastStream();
+  RosSubscriber(this.topic, this.config) {
+    _valueUpdate = StreamController<Message>();
+    onValueUpdate = _valueUpdate.stream.asBroadcastStream();
   }
 
   List<int> _tcprosHeader() {
-    final callerId = 'callerid=/$nodeName';
+    final callerId = 'callerid=/${config.name}';
     final tcpNoDelay = 'tcp_nodelay=0';
-    final topic = 'topic=/${this.topic}';
+    final topic = 'topic=/${this.topic.name}';
 
-    var messageHeader = type.binaryHeader;
+    var messageHeader = this.topic.msg.binaryHeader;
     var fullSize = messageHeader.length +
         4 +
         callerId.length +
@@ -59,74 +69,96 @@ class RosSubscriber<Message extends RosMessage> {
     return header;
   }
 
-  Future<XmlDocument> onPublisherUpdate(List<dynamic> values) async {
-    //TODO: values[0] is name of the node calling api
-    //TODO: values[0] is operation result if called master
+  Future<Socket> establishTCPROSConnection(ProtocolInfo protocolInfo) async {
+    var socket =
+        await Socket.connect(protocolInfo.params[0], protocolInfo.params[1]);
 
-    _tcprosConnections.removeWhere((apiAddress, connection) {
-      final remove = !(values[2] as List).contains(apiAddress);
-      if (remove) {
-        connection.close();
-      }
-      return remove;
+    socket.add(_tcprosHeader());
+    var broadcast = socket.asBroadcastStream();
+
+    //Handshake only
+    broadcast.take(1).listen((handshake) {
+      var headers = decodeHeader(handshake);
+      var md5sum = headers
+          .where((header) => header.contains('md5sum='))
+          .first
+          .substring(7);
+      var type = headers
+          .where((header) => header.contains('type='))
+          .first
+          .substring(5);
+
+      assert(md5sum == topic.msg.type_md5);
+      assert(type == topic.msg.message_type);
+
+      var callerid =
+          headers.where((header) => header.contains('callerid=')).firstOrNull();
+      var latching =
+          headers.where((header) => header.contains('latching=')).firstOrNull();
     });
 
-    for (var connection in values[2]) {
+    //Message data
+    var buffor = BytesBuilder();
+    var recived = 0;
+    var size = 0;
+
+    //Data stream
+    broadcast.skip(1).listen((data) {
+      recived += data.length;
+      buffor.add(data);
+
+      while (recived >= size && recived != 0) {
+        var msgData = buffor.takeBytes();
+        size = ByteData.view(msgData.buffer).getUint32(0, Endian.little) + 4;
+        buffor.add(msgData.sublist(size));
+        topic.msg.fromBytes(msgData.sublist(0, size), offset: 4);
+        _valueUpdate.add(topic.msg);
+        recived -= size;
+        size = 0;
+      }
+    });
+
+    return socket;
+  }
+
+  Future<bool> updatePublisherList(List<String> publishers) async {
+    _connections.removeWhere((apiAddress, connection) {
+      final connected = !publishers.contains(apiAddress);
+      if (!connected) {
+        connection.close();
+      }
+      return connected == false;
+    });
+
+    for (var connection in publishers) {
       final response = await xml_rpc.call(connection, 'requestTopic', [
-        '/$nodeName',
-        '/$topic',
+        '/${config.name}',
+        '/${topic.name}',
         [
           ['TCPROS']
         ]
       ]);
 
-      var connectionValues = response[2];
-      if (!_tcprosConnections.keys.contains(connection)) {
-        var socket =
-            await Socket.connect(connectionValues[1], connectionValues[2]);
-
-        socket.add(_tcprosHeader());
-
-        var done = false;
-
-        socket.listen((data) {
-          if (!done) {
-            done = true;
-            return;
-          }
-          type.fromBytes(data, offset: 4);
-          valueUpdate.add(type);
-        });
-
-        _tcprosConnections.putIfAbsent(connection, () => socket);
+      if ((response[2] as List<dynamic>).isEmpty) {
+        continue;
       }
-    }
-    return generateXmlResponse([1]);
-  }
 
-  void subscribe() async {
-    try {
-      final result =
-          await xml_rpc.call(config.masterUri, 'registerSubscriber', [
-        '/$nodeName',
-        '/$topic',
-        '${type.message_type}',
-        'http://${_server.host}:${_server.port}/'
-      ]);
-      await onPublisherUpdate(result);
-    } catch (e) {
-      //TODO: Error while registering
-    }
-  }
+      final code = response[0] as int;
+      final status = response[1] as String;
+      final protocol = ProtocolInfo(
+          response[2][0], (response[2] as List<dynamic>).sublist(1));
 
-  void unsubscribe() async {
-    try {
-      final result = await xml_rpc.call(
-          config.masterUri,
-          'unregisterSubscriber',
-          ['/$nodeName', '/$topic', 'http://${_server.host}:${_server.port}/']);
-    } catch (e) {
-      //TODO: Error while registering
+      Socket socket;
+      switch (protocol.name) {
+        case 'TCPROS':
+          socket = await establishTCPROSConnection(protocol);
+          break;
+      }
+
+      assert(socket != null);
+
+      _connections.putIfAbsent(connection, () => socket);
     }
+    return true;
   }
 }
