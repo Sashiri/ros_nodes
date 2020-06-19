@@ -44,13 +44,15 @@ class RosClient {
     final serviceStats = [0, 0, 0];
 
     return generateXmlResponse([
-      1,
-      'Not implemented',
       [
-        publishStats,
-        subscribeStats,
-        serviceStats,
-      ],
+        1,
+        'Not implemented',
+        [
+          publishStats,
+          subscribeStats,
+          serviceStats,
+        ],
+      ]
     ]);
   }
 
@@ -58,9 +60,11 @@ class RosClient {
     final callerId = params[0] as String;
 
     return generateXmlResponse([
-      1,
-      'Not implemented',
-      [],
+      [
+        1,
+        'Not implemented',
+        [],
+      ]
     ]);
   }
 
@@ -81,9 +85,11 @@ class RosClient {
     var ignored = await sub.updatePublisherList(publishers);
 
     return generateXmlResponse([
-      1,
-      'Updated subscribers',
-      ignored,
+      [
+        1,
+        'Updated subscribers',
+        ignored,
+      ]
     ]);
   }
 
@@ -124,9 +130,11 @@ class RosClient {
     final callerId = params[0] as String;
 
     return generateXmlResponse([
-      1,
-      'Node is connected to ${config.masterUri}',
-      config.masterUri,
+      [
+        1,
+        'Node is connected to ${config.masterUri}',
+        config.masterUri,
+      ]
     ]);
   }
 
@@ -154,9 +162,11 @@ class RosClient {
     }
 
     return generateXmlResponse([
-      1,
-      'Found ${validProtocols.length} valid protocols',
-      validProtocols.isEmpty ? [] : validProtocols.first,
+      [
+        1,
+        'Found ${validProtocols.length} valid protocols',
+        validProtocols.isEmpty ? [] : validProtocols.first,
+      ]
     ]);
   }
 
