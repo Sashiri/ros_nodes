@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:ros_nodes/messages/std_msgs/String.dart';
 import 'package:ros_nodes/ros_nodes.dart';
 
@@ -13,7 +12,9 @@ void main() async {
   var client = RosClient(config);
   var topic = RosTopic('chatter', StdMsgsString());
   await client.unregister(topic);
-  var publisher = await client.register(topic);
+
+  var publisher = await client.register(topic,
+      publishInterval: Duration(milliseconds: 1000));
 
   var i = 0;
   Timer.periodic(
@@ -21,10 +22,6 @@ void main() async {
     (timer) async {
       i += 1;
       topic.msg.data = i.toString();
-      if (i > 20) {
-        await client.unregister(topic);
-        timer.cancel();
-      }
     },
   );
 }
