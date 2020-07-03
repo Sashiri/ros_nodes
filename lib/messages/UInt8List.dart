@@ -12,7 +12,8 @@ class RosUint8List implements BinaryConvertable {
   @override
   int fromBytes(Uint8List bytes, {int offset = 0}) {
     var size = ByteData.view(bytes.buffer).getUint32(offset, Endian.little);
-    list = Uint8List.fromList(bytes.sublist(4 + offset, size));
+    offset += 4;
+    list = bytes.sublist(offset, offset + size);
     return 4 + size;
   }
 

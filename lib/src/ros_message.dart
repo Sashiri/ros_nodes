@@ -42,19 +42,19 @@ abstract class RosMessage implements BinaryConvertable {
   @override
   List<int> toBytes() {
     var bytes = <int>[];
-    params.forEach((param) {
+    for(var param in params){
       var paramBytes = param.toBytes();
       bytes.addAll(paramBytes);
-    });
+    }
     return bytes;
   }
 
   @override
   int fromBytes(Uint8List bytes, {int offset = 0}) {
     var size = 0;
-    params.forEach((param) {
+    for (var param in params) {
       size += param.fromBytes(bytes, offset: offset + size);
-    });
+    }
     return size;
   }
 }

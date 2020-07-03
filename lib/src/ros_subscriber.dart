@@ -95,7 +95,7 @@ class RosSubscriber<Message extends RosMessage> {
 
       while (true) {
         if(size == 0 && recived >= 4) {
-          size = ByteData.view(data.buffer).getUint32(0, Endian.little) + 4;
+          size = ByteData.view(buffor.toBytes().buffer, 0, 4).getUint32(0, Endian.little) + 4;
         }
         if(recived < size || size == 0) {
           break;
