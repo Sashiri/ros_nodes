@@ -9,7 +9,14 @@ import 'package:xml_rpc/client.dart' as xml_rpc;
 import 'type_apis/int_apis.dart';
 import 'ros_config.dart';
 
-List<String> decodeHeader(Uint8List header) {
+class TcpHandShake {
+  int size;
+  List<String> headers;
+
+  TcpHandShake(this.size, this.headers);
+}
+
+TcpHandShake decodeHeader(Uint8List header) {
   var data = ByteData.view(header.buffer);
   var size = data.getUint32(0, Endian.little);
   var index = 4;
@@ -21,7 +28,7 @@ List<String> decodeHeader(Uint8List header) {
     decodedHeader.add(param);
     index += size;
   }
-  return decodedHeader;
+  return TcpHandShake(index, decodedHeader);
 }
 
 extension IterableExtension<T> on Iterable<T> {
@@ -76,14 +83,45 @@ class RosSubscriber<Message extends RosMessage> {
     socket.add(_tcprosHeader());
     var broadcast = socket.asBroadcastStream();
 
+    //Message data
+    var buffor = BytesBuilder();
+    var recived = 0;
+    var size = 0;
+
+    //TCPROS Connection loop
+    void loop(Uint8List data){
+      recived += data.length;
+      buffor.add(data);
+
+      while (true) {
+        if(size == 0 && recived >= 4) {
+          size = ByteData.view(data.buffer).getUint32(0, Endian.little) + 4;
+        }
+        if(recived < size || size == 0) {
+          break;
+        }
+
+        var msgData = buffor.takeBytes();
+        buffor.add(msgData.sublist(size));
+        msgData = msgData.sublist(0, size);
+        var usedbytes = topic.msg.fromBytes(msgData, offset: 4);
+
+        assert(usedbytes == size - 4);
+        
+        _valueUpdate.add(topic.msg);
+        recived -= size;
+        size = 0;
+      }
+    }
+
     //Handshake only
-    broadcast.take(1).listen((handshake) {
-      var headers = decodeHeader(handshake);
-      var md5sum = headers
+    broadcast.take(1).listen((data) {
+      var handshake = decodeHeader(data);
+      var md5sum = handshake.headers
           .where((header) => header.contains('md5sum='))
           .first
           .substring(7);
-      var type = headers
+      var type = handshake.headers
           .where((header) => header.contains('type='))
           .first
           .substring(5);
@@ -92,31 +130,16 @@ class RosSubscriber<Message extends RosMessage> {
       assert(type == topic.msg.message_type);
 
       var callerid =
-          headers.where((header) => header.contains('callerid=')).firstOrNull();
+          handshake.headers.where((header) => header.contains('callerid=')).firstOrNull();
       var latching =
-          headers.where((header) => header.contains('latching=')).firstOrNull();
+          handshake.headers.where((header) => header.contains('latching=')).firstOrNull();
+
+      loop(data.sublist(handshake.size));
     });
 
-    //Message data
-    var buffor = BytesBuilder();
-    var recived = 0;
-    var size = 0;
 
     //Data stream
-    broadcast.skip(1).listen((data) {
-      recived += data.length;
-      buffor.add(data);
-
-      while (recived >= size && recived != 0) {
-        var msgData = buffor.takeBytes();
-        size = ByteData.view(msgData.buffer).getUint32(0, Endian.little) + 4;
-        buffor.add(msgData.sublist(size));
-        topic.msg.fromBytes(msgData.sublist(0, size), offset: 4);
-        _valueUpdate.add(topic.msg);
-        recived -= size;
-        size = 0;
-      }
-    });
+    broadcast.skip(1).listen(loop);
 
     return socket;
   }
