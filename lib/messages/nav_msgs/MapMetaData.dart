@@ -1,6 +1,7 @@
 import 'package:ros_nodes/messages/UInt32.dart';
 import 'package:ros_nodes/messages/Float32.dart';
 import 'package:ros_nodes/messages/Time.dart';
+import 'package:ros_nodes/messages/geometry_msgs/Pose.dart';
 import 'package:ros_nodes/src/ros_message.dart';
 
 class NavMsgsMapMetaData extends RosMessage {
@@ -8,6 +9,7 @@ class NavMsgsMapMetaData extends RosMessage {
   final _resolution = RosFloat32();
   final _width = RosUint32();
   final _height = RosUint32();
+  var origin = GeometryMsgsPose();
 
   double get resolution => _resolution.val;
   set resolution(double val) => _resolution.val = val;
@@ -25,5 +27,6 @@ class NavMsgsMapMetaData extends RosMessage {
     params.add(_resolution);
     params.add(_width);
     params.add(_height);
+    params.add(origin);
   }
 }
