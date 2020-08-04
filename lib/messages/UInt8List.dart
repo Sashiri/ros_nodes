@@ -19,9 +19,10 @@ class RosUint8List implements BinaryConvertable {
 
   @override
   List<int> toBytes() {
-    var bytes = Uint8List(4 + list.length);
-    bytes.addAll(list.length.toBytes());
-    bytes.addAll(list);
+    final listLenght = list.length;
+    var bytes = Uint8List(4 + listLenght);
+    bytes.setRange(0, 4, listLenght.toBytes());
+    bytes.setRange(4, bytes.length, list);
     return bytes;
   }
 
