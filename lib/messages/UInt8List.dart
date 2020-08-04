@@ -4,28 +4,27 @@ import 'package:ros_nodes/src/type_apis/int_apis.dart';
 
 class RosUint8List implements BinaryConvertable {
   Uint8List list;
-  final isFixed;
+  final int fixedLength;
 
-  RosUint8List({int lenght}) : isFixed = lenght ?? false {
-    list = Uint8List(lenght ?? 0);
+  RosUint8List({this.fixedLength}) {
+    list = Uint8List(fixedLength ?? 0);
   }
 
-  RosUint8List.fromList(this.list, {this.isFixed});
+  RosUint8List.fromList(this.list, {this.fixedLength});
 
   @override
   int fromBytes(Uint8List bytes, {int offset = 0}) {
-    if (isFixed) {
-      var listLength =
-          ByteData.view(bytes.buffer).getUint32(offset, Endian.little);
-      offset += 4;
-      list =
-          Uint8List.fromList(Uint8List.view(bytes.buffer, offset, listLength));
-      return 4 + listLength;
+    var size;
+    var data;
+    if (fixedLength == null) {
+      size = ByteData.view(bytes.buffer).getUint32(offset, Endian.little);
+      data = size + 4;
     } else {
-      final listLength = list.length;
-      list.setAll(0, Uint8List.view(bytes.buffer, offset, listLength));
-      return listLength;
+      size = list.length;
+      data = size;
     }
+    list = Uint8List.view(bytes.buffer, offset, size);
+    return data;
   }
 
   @override
@@ -33,13 +32,12 @@ class RosUint8List implements BinaryConvertable {
     final listLength = list.length;
 
     Uint8List bytes;
-    if (isFixed) {
-      bytes = Uint8List(listLength);
-      bytes.setRange(0, bytes.length, list);
-    } else {
+    if (fixedLength == null) {
       bytes = Uint8List(4 + listLength);
       bytes.setRange(0, 4, listLength.toBytes());
       bytes.setRange(4, bytes.length, list);
+    } else {
+      bytes = list.buffer.asUint8List();
     }
     return bytes;
   }
