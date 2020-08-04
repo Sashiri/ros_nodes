@@ -9,12 +9,19 @@ A simple subscriber example:
 import 'package:ros_nodes/messages/std_msgs/String.dart';
 import 'package:ros_nodes/ros_nodes.dart';
 
-void main() {
-  var config = RosNode('http://tutibot:11311/', '192.168.1.2', 24125);
+void main() async {
+  var config = RosConfig(
+    'ros_nodes_example_node',
+    'http://192.168.1.12:11311/',
+    '192.168.1.12',
+    24125,
+  );
+  var client = RosClient(config);
   var msg = StdMsgsString();
-  var subscriber =
-      RosSubscriber('ros_nodes_example_subscriber', 'chatter', msg, config);
-  subscriber.subscribe();
+  var topic = RosTopic('chatter', msg);
+  await client.unsubscribe(topic);
+
+  var subscriber = await client.subscribe(topic);
   subscriber.onValueUpdate.listen((type) => print('Listener 1: ${type.data}'));
   subscriber.onValueUpdate.listen((_) => print('Listener 2: ${msg.data}'));
 }
@@ -36,18 +43,30 @@ import 'dart:async';
 import 'package:ros_nodes/messages/std_msgs/String.dart';
 import 'package:ros_nodes/ros_nodes.dart';
 
-void main() {
-  var config = RosNode('http://tutibot:11311/', '192.168.1.2', 24125);
-  var msg = StdMsgsString();
-  var publisher =
-      RosPublisher('ros_nodes_example_publisher', 'chatter', msg, config);
+void main() async {
+  var config = RosConfig(
+    'ros_nodes_example_node',
+    'http://192.168.1.12:11311/',
+    '192.168.1.12',
+    24125,
+  );
+  var client = RosClient(config);
+  var topic = RosTopic('chatter', StdMsgsString());
+  await client.unregister(topic);
+
+  var publisher = await client.register(topic,
+      publishInterval: Duration(milliseconds: 1000));
 
   var i = 0;
-  Timer.periodic(Duration(milliseconds: 500), (_) {
-    i += 1;
-    msg.data = i.toString();
-  });
+  Timer.periodic(
+    Duration(milliseconds: 500),
+    (_) {
+      i += 1;
+      topic.msg.data = i.toString();
+    },
+  );
 }
+
 ```
 
 By default `RosPublisher` will send updates every second. 
@@ -55,10 +74,13 @@ To change the interval you need to supply `publishInterval` parameter.
 
 ``` dart
 var i = 0;
-Timer.periodic(Duration(milliseconds: 500), (_) {
-  i += 1;
-  msg.data = i.toString();
-});
+Timer.periodic(
+  Duration(milliseconds: 500),
+  (_) {
+    i += 1;
+    topic.msg.data = i.toString();
+  },
+);
 ```
 To change the published data we operate on supplied `RosMessage` type, in this case it's `StdMsgsString`.
 

@@ -19,7 +19,7 @@ void main() async {
   var i = 0;
   Timer.periodic(
     Duration(milliseconds: 500),
-    (timer) async {
+    (_) {
       i += 1;
       topic.msg.data = i.toString();
     },
