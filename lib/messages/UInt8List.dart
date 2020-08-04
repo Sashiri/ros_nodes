@@ -15,13 +15,15 @@ class RosUint8List implements BinaryConvertable {
   @override
   int fromBytes(Uint8List bytes, {int offset = 0}) {
     if (isFixed) {
-      var size = ByteData.view(bytes.buffer).getUint32(offset, Endian.little);
+      var listLength =
+          ByteData.view(bytes.buffer).getUint32(offset, Endian.little);
       offset += 4;
-      list = Uint8List.fromList(bytes.buffer.asUint8List(offset, size));
-      return 4 + size;
+      list =
+          Uint8List.fromList(Uint8List.view(bytes.buffer, offset, listLength));
+      return 4 + listLength;
     } else {
       final listLength = list.length;
-      list.setAll(0, bytes.buffer.asUint8List(offset, listLength));
+      list.setAll(0, Uint8List.view(bytes.buffer, offset, listLength));
       return listLength;
     }
   }

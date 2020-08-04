@@ -17,11 +17,11 @@ class RosInt8List implements BinaryConvertable {
     if (isFixed) {
       var size = ByteData.view(bytes.buffer).getUint32(offset, Endian.little);
       offset += 4;
-      list = Int8List.fromList(bytes.buffer.asUint8List(offset, size));
+      list = Int8List.fromList(Int8List.view(bytes.buffer, offset, size));
       return 4 + size;
     } else {
       final listLength = list.length;
-      list.setAll(0, bytes.buffer.asUint8List(offset, listLength));
+      list.setAll(0, Int8List.view(bytes.buffer, offset, listLength));
       return listLength;
     }
   }
