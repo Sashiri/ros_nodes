@@ -3,21 +3,41 @@ import 'package:ros_nodes/src/ros_message.dart';
 
 class RosFloat64List implements BinaryConvertable {
   Float64List list;
+  final int fixedLength;
 
-  RosFloat64List({Float64List list}) {
-    this.list = list ?? Float64List(36);
+  RosFloat64List({this.fixedLength}) {
+    list = Float64List(fixedLength ?? 0);
   }
+
+  Float64List.fromList(this.list, {this.fixedLength});
 
   @override
   int fromBytes(Uint8List bytes, {int offset = 0}) {
-    var size = this.list.length;
+    var size;
+    var data;
+    if (fixedLength == null) {
+      size = ByteData.view(bytes.buffer).getUint32(offset, Endian.little);
+      data = size + 4;
+    } else {
+      size = list.length;
+      data = size;
+    }
     list = Float64List.view(bytes.buffer, offset, size);
-    return size;
+    return data;
   }
 
   @override
   List<int> toBytes() {
-    var bytes = list.buffer.asUint8List();
+    final listLength = list.length;
+
+    Uint8List bytes;
+    if (fixedLength == null) {
+      bytes = Uint8List(4 + listLength);
+      bytes.setRange(0, 4, listLength.toBytes());
+      bytes.setRange(4, bytes.length, list);
+    } else {
+      bytes = list.buffer.asUint8List();
+    }
     return bytes;
   }
 
