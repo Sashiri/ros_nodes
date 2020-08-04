@@ -4,7 +4,7 @@ import 'package:ros_nodes/messages/Float64List.dart';
 
 class PoseWithCovariance extends RosMessage {
   var pose = GeometryMsgsPose();
-  var covariance = RosFloat64List();
+  var covariance = RosFloat64List(fixedLength: 36);
 
   PoseWithCovariance()
       : super(
