@@ -148,8 +148,9 @@ class RosClient {
             ));
 
     if (!_topicPublishers.containsKey(topic)) {
-      return generateXmlResponse(
-          [-1, 'No active publishers for topic ${topic}']);
+      return generateXmlResponse([
+        [1, 'No active publishers for topic ${topic}', []]
+      ]);
     }
 
     final publisher = _topicPublishers[topic];
@@ -161,11 +162,14 @@ class RosClient {
       }
     }
 
+    var selectedProtocol =
+        validProtocols.firstWhere((element) => true, orElse: () => null);
+
     return generateXmlResponse([
       [
         1,
-        'Found ${validProtocols.length} valid protocols',
-        validProtocols.isEmpty ? [] : validProtocols.first,
+        'ready on ${selectedProtocol[1]}:${selectedProtocol[2]}',
+        selectedProtocol ?? []
       ]
     ]);
   }
