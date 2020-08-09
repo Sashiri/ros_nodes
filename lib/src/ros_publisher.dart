@@ -49,7 +49,7 @@ class RosPublisher {
     _publishTimer.cancel();
   }
 
-  Future close() async {
+  Future<void> close() async {
     stopPublishing();
     await Future.wait(_subscribers.map((subscriber) => subscriber.close()));
     await _tcprosServer.close();
