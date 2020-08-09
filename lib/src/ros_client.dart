@@ -1,13 +1,14 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:ros_nodes/ros_nodes.dart';
-import 'package:ros_nodes/src/ros_topic.dart';
 import 'package:xmlrpc_server/xmlrpc_server.dart';
 import 'package:xml_rpc/client.dart' as xml_rpc;
 import 'package:xml/xml.dart';
 
-import 'protocol_info.dart';
 import 'ros_config.dart';
+import 'ros_topic.dart';
+import 'ros_message.dart';
+import 'ros_publisher.dart';
+import 'ros_subscriber.dart';
+import 'protocol_info.dart';
 
 class RosClient {
   final RosConfig config;
@@ -31,7 +32,19 @@ class RosClient {
     _server.startServer();
   }
 
-  Future close() {}
+  Future<void> close() async {
+    var subcribtionsToClose = _topicSubscribers.values.map((subscriber) =>
+        unsubscribe(subscriber.topic)
+            .timeout(Duration(seconds: 3), onTimeout: subscriber.forceStop));
+
+    var publishersToClose = _topicPublishers.values.map((publisher) =>
+        unregister(publisher.topic)
+            .timeout(Duration(seconds: 3))
+            .then((_) => publisher.close()));
+
+    await Future.wait([...subcribtionsToClose, ...publishersToClose]);
+    return _server.stopServer();
+  }
 
   Future<XmlDocument> onGetBusStats(List<dynamic> params) async {
     final callerId = params[0] as String;
