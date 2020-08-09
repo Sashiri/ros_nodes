@@ -8,41 +8,37 @@ abstract class BinaryConvertable {
 }
 
 abstract class RosMessage implements BinaryConvertable {
-  String _message_definition;
-  String _message_type;
-  String _type_md5;
+  final String message_definition;
+  final String message_type;
+  final String type_md5;
+  final List<int> binaryHeader;
 
   List<BinaryConvertable> params = [];
 
-  String get message_definition => _message_definition;
-  String get message_type => _message_type;
-  String get type_md5 => _type_md5;
+  RosMessage(this.message_definition, this.message_type, this.type_md5)
+      : binaryHeader =
+            _calculateHeader(message_definition, message_type, type_md5);
 
-  List<int> get binaryHeader {
-    var message_definition = 'message_definition=$_message_definition';
-    var message_type = 'type=$_message_type';
-    var type_md5 = 'md5sum=$_type_md5';
+  static List<int> _calculateHeader(
+      String message_definition, String message_type, String type_md5) {
+    var header_message_definition = 'message_definition=$message_definition';
+    var header_message_type = 'type=$message_type';
+    var header_type_md5 = 'md5sum=$type_md5';
 
     var bytes = <int>[];
-    bytes.addAll(message_definition.length.toBytes());
-    bytes.addAll(utf8.encode(message_definition));
-    bytes.addAll(message_type.length.toBytes());
-    bytes.addAll(utf8.encode(message_type));
-    bytes.addAll(type_md5.length.toBytes());
-    bytes.addAll(utf8.encode(type_md5));
+    bytes.addAll(header_message_definition.length.toBytes());
+    bytes.addAll(utf8.encode(header_message_definition));
+    bytes.addAll(header_message_type.length.toBytes());
+    bytes.addAll(utf8.encode(header_message_type));
+    bytes.addAll(header_type_md5.length.toBytes());
+    bytes.addAll(utf8.encode(header_type_md5));
     return bytes;
-  }
-
-  RosMessage(String message_definition, String message_type, String type_md5) {
-    _message_definition = message_definition;
-    _message_type = message_type;
-    _type_md5 = type_md5;
   }
 
   @override
   List<int> toBytes() {
     var bytes = <int>[];
-    for(var param in params){
+    for (var param in params) {
       var paramBytes = param.toBytes();
       bytes.addAll(paramBytes);
     }
