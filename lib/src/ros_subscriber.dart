@@ -89,15 +89,17 @@ class RosSubscriber<Message extends RosMessage> {
     var size = 0;
 
     //TCPROS Connection loop
-    void loop(Uint8List data){
+    void loop(Uint8List data) {
       recived += data.length;
       buffor.add(data);
 
       while (true) {
-        if(size == 0 && recived >= 4) {
-          size = ByteData.view(buffor.toBytes().buffer, 0, 4).getUint32(0, Endian.little) + 4;
+        if (size == 0 && recived >= 4) {
+          size = ByteData.view(buffor.toBytes().buffer, 0, 4)
+                  .getUint32(0, Endian.little) +
+              4;
         }
-        if(recived < size || size == 0) {
+        if (recived < size || size == 0) {
           break;
         }
 
@@ -107,7 +109,7 @@ class RosSubscriber<Message extends RosMessage> {
         var usedbytes = topic.msg.fromBytes(msgData, offset: 4);
 
         assert(usedbytes == size - 4);
-        
+
         _valueUpdate.add(topic.msg);
         recived -= size;
         size = 0;
@@ -129,14 +131,15 @@ class RosSubscriber<Message extends RosMessage> {
       assert(md5sum == topic.msg.type_md5);
       assert(type == topic.msg.message_type);
 
-      var callerid =
-          handshake.headers.where((header) => header.contains('callerid=')).firstOrNull();
-      var latching =
-          handshake.headers.where((header) => header.contains('latching=')).firstOrNull();
+      var callerid = handshake.headers
+          .where((header) => header.contains('callerid='))
+          .firstOrNull();
+      var latching = handshake.headers
+          .where((header) => header.contains('latching='))
+          .firstOrNull();
 
       loop(data.sublist(handshake.size));
     });
-
 
     //Data stream
     broadcast.skip(1).listen(loop);
@@ -183,5 +186,12 @@ class RosSubscriber<Message extends RosMessage> {
       _connections.putIfAbsent(connection, () => socket);
     }
     return true;
+  }
+
+  Future<void> forceStop() {
+    return Future.wait(_connections.values.map((e) async {
+      await e.flush();
+      return e.close();
+    }));
   }
 }
