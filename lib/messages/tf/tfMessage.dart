@@ -3,9 +3,7 @@ import 'package:ros_nodes/messages/List.dart';
 import 'package:ros_nodes/src/ros_message.dart';
 
 class TfTfMessage extends RosMessage {
-  final RosList<GeometryMsgsTransformStamped> _transforms =
-      RosList<GeometryMsgsTransformStamped>(
-          () => GeometryMsgsTransformStamped());
+  final _transforms = RosList(() => GeometryMsgsTransformStamped());
 
   List<GeometryMsgsTransformStamped> get transforms => _transforms.list;
 
