@@ -42,7 +42,7 @@ class RosSubscriber<Message extends RosMessage> {
   StreamController<Message> _valueUpdate;
   RosConfig config;
 
-  final RosTopic topic;
+  final RosTopic<Message> topic;
   Stream<Message> onValueUpdate;
 
   RosSubscriber(this.topic, this.config) {
