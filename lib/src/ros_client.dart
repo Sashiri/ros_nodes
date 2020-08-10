@@ -39,8 +39,7 @@ class RosClient {
 
     var publishersToClose = _topicPublishers.values.map((publisher) =>
         unregister(publisher.topic)
-            .timeout(Duration(seconds: 3))
-            .then((_) => publisher.close()));
+            .timeout(Duration(seconds: 3), onTimeout: () => publisher.close()));
 
     await Future.wait([...subcribtionsToClose, ...publishersToClose]);
     return _server.stopServer();
