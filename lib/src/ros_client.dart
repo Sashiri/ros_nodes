@@ -269,7 +269,7 @@ class RosClient {
       throw status;
     }
 
-    sub = _topicSubscribers.putIfAbsent(topic.msg.message_type, () => sub);
+    sub = _topicSubscribers.putIfAbsent('/${topic.name}', () => sub);
     var publishers = List<String>.from(result[2]);
     await sub.updatePublisherList(publishers);
     return sub;

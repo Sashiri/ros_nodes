@@ -156,36 +156,48 @@ class RosSubscriber<Message extends RosMessage> {
       return connected == false;
     });
 
-    for (var connection in publishers) {
-      final response = await xml_rpc.call(connection, 'requestTopic', [
+    await Future.wait(
+        [for (var connection in publishers) _connectWithPublisher(connection)]);
+
+    return true;
+  }
+
+  Future<void> _connectWithPublisher(String connection) async {
+    dynamic response;
+    try {
+      response = await xml_rpc.call(connection, 'requestTopic', [
         '/${config.name}',
         '/${topic.name}',
         [
           ['TCPROS']
         ]
       ]);
-
-      if ((response[2] as List<dynamic>).isEmpty) {
-        continue;
+    } on SocketException catch (e) {
+      if (e.osError.errorCode == 1225) {
+        return;
       }
-
-      final code = response[0] as int;
-      final status = response[1] as String;
-      final protocol = ProtocolInfo(
-          response[2][0], (response[2] as List<dynamic>).sublist(1));
-
-      Socket socket;
-      switch (protocol.name) {
-        case 'TCPROS':
-          socket = await establishTCPROSConnection(protocol);
-          break;
-      }
-
-      assert(socket != null);
-
-      _connections.putIfAbsent(connection, () => socket);
+      rethrow;
     }
-    return true;
+
+    if ((response[2] as List<dynamic>).isEmpty) {
+      return;
+    }
+
+    final code = response[0] as int;
+    final status = response[1] as String;
+    final protocol =
+        ProtocolInfo(response[2][0], (response[2] as List<dynamic>).sublist(1));
+
+    Socket socket;
+    switch (protocol.name) {
+      case 'TCPROS':
+        socket = await establishTCPROSConnection(protocol);
+        break;
+    }
+
+    assert(socket != null);
+
+    _connections.putIfAbsent(connection, () => socket);
   }
 
   Future<void> forceStop() {
