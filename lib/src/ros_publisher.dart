@@ -12,20 +12,29 @@ class RosPublisher {
 
   Duration _publishInterval;
   Duration get publishInterval => _publishInterval;
+
+  ///Changing publishing interval stops publishing 
   set publishInterval(Duration value) {
     _publishInterval = value;
     _publishTimer?.cancel();
-    startPublishing();
+    stopPublishing();
   }
 
   int get port => _tcprosServer.port;
 
   String get address => _tcprosServer.address.address;
 
-  RosPublisher(this.topic, host, {int port, Duration publishInterval})
+  ///If [port] is ommited, it will be selected at random by ServerSocket.bind
+  ///You can disable automatic start of publishing data by passing false to [publish]
+  RosPublisher(this.topic, dynamic host,
+      {int port, Duration publishInterval, bool publish = false})
       : assert(
             host.runtimeType == String || host.runtimeType == InternetAddress) {
     this.publishInterval = publishInterval ?? Duration(seconds: 1);
+    if (publish) {
+      startPublishing();
+    }
+
     port ??= 0;
 
     ServerSocket.bind(host, port).then((server) {
@@ -43,12 +52,14 @@ class RosPublisher {
   }
 
   void startPublishing() {
-    _publishTimer =
+    _publishTimer ??=
         Timer.periodic(publishInterval, (_) async => await publishData());
   }
 
   void stopPublishing() {
-    _publishTimer.cancel();
+    if (_publishTimer != null) {
+      _publishTimer.cancel();
+    }
   }
 
   Future<void> close() async {
@@ -58,7 +69,7 @@ class RosPublisher {
     _tcprosServer = null;
   }
 
-  Future publishData() async {
+  Future<void> publishData() async {
     for (var subscriber in _subscribers) {
       var packet = <int>[];
       var data = topic.msg.toBytes();
