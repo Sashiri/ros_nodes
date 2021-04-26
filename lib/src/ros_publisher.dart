@@ -22,7 +22,9 @@ class RosPublisher {
 
   String get address => _tcprosServer.address.address;
 
-  RosPublisher(this.topic, String host, {int port, Duration publishInterval}) {
+  RosPublisher(this.topic, host, {int port, Duration publishInterval})
+      : assert(
+            host.runtimeType == String || host.runtimeType == InternetAddress) {
     this.publishInterval = publishInterval ?? Duration(seconds: 1);
     port ??= 0;
 
