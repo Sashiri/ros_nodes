@@ -1,11 +1,11 @@
 import 'package:ros_nodes/messages/std_msgs/String.dart';
 import 'package:ros_nodes/ros_nodes.dart';
 
-void main() async {
+Future<void> main() async {
   var config = RosConfig(
-    'ros_nodes_example_node',
-    'http://192.168.1.12:11311/',
-    '192.168.1.12',
+    'ros_nodes_example_node_subscriber',
+    'http://127.0.0.1:11311/',
+    '127.0.0.1',
     24125,
   );
   var client = RosClient(config);

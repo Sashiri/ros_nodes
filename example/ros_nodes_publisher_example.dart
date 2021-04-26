@@ -5,8 +5,8 @@ import 'package:ros_nodes/ros_nodes.dart';
 void main() async {
   var config = RosConfig(
     'ros_nodes_example_node',
-    'http://192.168.1.12:11311/',
-    '192.168.1.12',
+    'http://127.0.0.1:11311/',
+    '127.0.0.1',
     24125,
   );
   var client = RosClient(config);
