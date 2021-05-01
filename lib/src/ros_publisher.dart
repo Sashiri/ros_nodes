@@ -27,7 +27,7 @@ class RosPublisher {
   ///If [port] is ommited, it will be selected at random by ServerSocket.bind
   ///You can disable automatic start of publishing data by passing false to [publish]
   RosPublisher(this.topic, dynamic host,
-      {int port, Duration publishInterval, bool publish = false})
+      {int port, Duration publishInterval, bool publish = true})
       : assert(
             host.runtimeType == String || host.runtimeType == InternetAddress) {
     this.publishInterval = publishInterval ?? Duration(seconds: 1);
