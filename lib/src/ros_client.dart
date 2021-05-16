@@ -49,7 +49,7 @@ class RosClient {
     return _server.stop();
   }
 
-  dynamic onGetBusStats(String callerId) async {
+  dynamic onGetBusStats(String callerId) {
     final publishStats = _topicPublishers.entries.map<List<dynamic>>(
       (e) {
         return [e.key, 0, []];
@@ -69,7 +69,7 @@ class RosClient {
     ];
   }
 
-  dynamic onGetBusInfo(String callerId) async {
+  dynamic onGetBusInfo(String callerId) {
     return [
       1,
       'Not implemented',
@@ -77,7 +77,7 @@ class RosClient {
     ];
   }
 
-  dynamic onGetMasterUri(String callerId) async {
+  dynamic onGetMasterUri(String callerId) {
     return [
       1,
       'Node is connected to ${config.masterUri}',
@@ -85,28 +85,28 @@ class RosClient {
     ];
   }
 
-  Future<XmlDocument> onShutdown(String callerId, [String msg = '']) async {
+  void onShutdown(String callerId, [String msg = '']) {
     throw UnimplementedError();
   }
 
-  Future<XmlDocument> onGetPid(String callerId) async {
+  void onGetPid(String callerId) {
     throw UnimplementedError();
   }
 
-  Future<XmlDocument> onGetSubscriptions(String callerId) async {
+  void onGetSubscriptions(String callerId) {
     throw UnimplementedError();
   }
 
-  Future<XmlDocument> onGetPublications(String callerId) async {
+  void onGetPublications(String callerId) {
     throw UnimplementedError();
   }
 
-  Future<XmlDocument> onParamUpdate(
-      String callerId, String parameterKey, dynamic parameterValue) async {
+  void onParamUpdate(
+      String callerId, String parameterKey, dynamic parameterValue) {
     throw UnimplementedError();
   }
 
-  dynamic onPublisherUpdate(
+  Future<dynamic> onPublisherUpdate(
       String callerId, String topic, List<String> publishers) async {
     if (!_topicSubscribers.containsKey(topic)) {
       return [
