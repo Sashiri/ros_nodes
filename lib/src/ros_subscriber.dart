@@ -31,9 +31,13 @@ TcpHandShake decodeHeader(Uint8List header) {
   return TcpHandShake(index, decodedHeader);
 }
 
-extension IterableExtension<T> on Iterable<T?> {
+extension IterableExtension<T> on Iterable<T> {
   T? firstOrNull() {
-    return firstWhere((_) => false, orElse: () => null);
+    if(length > 0)
+    {
+      return first;
+    }
+    return null;
   }
 }
 
