@@ -128,7 +128,7 @@ class RosClient {
 
   dynamic onRequestTopic(
       String callerId, String topic, List<dynamic> protocols) {
-    final parsedProtocols = List<List<dynamic>>.from(protocols)
+    final parsedProtocols = protocols
         .map<ProtocolInfo>((x) => ProtocolInfo(
               x[0],
               x.sublist(1),
