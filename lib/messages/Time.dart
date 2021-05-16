@@ -5,10 +5,9 @@ class RosTime implements BinaryConvertable {
   int sec;
   int nsec;
 
-  RosTime({int sec, int nsec}) {
-    this.sec = sec ?? 0;
-    this.nsec = nsec ?? 0;
-  }
+  RosTime({int? sec, int? nsec})
+      : sec = sec ?? 0,
+        nsec = nsec ?? 0;
 
   @override
   int fromBytes(Uint8List bytes, {int offset = 0}) {

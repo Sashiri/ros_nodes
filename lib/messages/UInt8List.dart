@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'NativeList.dart';
 
 class RosUint8List extends NativeList<Uint8List> {
-  RosUint8List({int fixedLength}) : super(fixedLength: fixedLength) {
+  RosUint8List({int? fixedLength}) : super(fixedLength: fixedLength) {
     list = Uint8List(fixedLength ?? 0);
   }
 

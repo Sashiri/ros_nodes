@@ -3,11 +3,11 @@ import 'package:ros_nodes/src/type_apis/int_apis.dart';
 import 'package:ros_nodes/src/ros_message.dart';
 
 class RosList<T extends BinaryConvertable> implements BinaryConvertable {
-  List<T> list;
-  T Function() _factoryMethod;
+  late List<T> list;
+  final T Function() _factoryMethod;
 
-  RosList(T Function() factoryMethod, {List<T> list}) {
-    _factoryMethod = factoryMethod;
+  RosList(T Function() factoryMethod, {List<T>? list})
+      : _factoryMethod = factoryMethod {
     this.list = list ?? <T>[];
   }
 

@@ -7,9 +7,7 @@ import 'package:ros_nodes/src/type_apis/int_apis.dart';
 class RosString implements BinaryConvertable {
   String val;
 
-  RosString({String value}) {
-    val = value ?? '';
-  }
+  RosString({String? value}) : val = value ?? '';
 
   @override
   int fromBytes(Uint8List bytes, {int offset = 0}) {

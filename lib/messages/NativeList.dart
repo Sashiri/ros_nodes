@@ -4,8 +4,8 @@ import 'package:ros_nodes/src/ros_message.dart';
 import 'package:ros_nodes/src/type_apis/int_apis.dart';
 
 abstract class NativeList<T extends TypedData> implements BinaryConvertable {
-  T list;
-  final int fixedLength;
+  late T list;
+  final int? fixedLength;
 
   NativeList({this.fixedLength});
 
@@ -20,12 +20,13 @@ abstract class NativeList<T extends TypedData> implements BinaryConvertable {
   int fromBytes(Uint8List bytes, {int offset = 0}) {
     int sizeInBytes;
     int bytesUsed;
-    if (fixedLength == null) {
+    var _len = fixedLength; 
+    if (_len == null) {
       sizeInBytes = bytes.buffer.asByteData().getUint32(offset, Endian.little);
       bytesUsed = sizeInBytes + 4;
       offset += 4;
     } else {
-      sizeInBytes = fixedLength * list.elementSizeInBytes;
+      sizeInBytes = _len * list.elementSizeInBytes;
       bytesUsed = sizeInBytes;
     }
     list =

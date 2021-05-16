@@ -4,9 +4,7 @@ import 'package:ros_nodes/src/ros_message.dart';
 class RosUint32 implements BinaryConvertable {
   int val;
 
-  RosUint32({int value}) {
-    val = value ?? 0;
-  }
+  RosUint32({int? value}) : val = value ?? 0;
 
   @override
   int fromBytes(Uint8List bytes, {int offset = 0}) {
