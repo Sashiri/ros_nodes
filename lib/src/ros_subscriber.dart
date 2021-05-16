@@ -31,22 +31,22 @@ TcpHandShake decodeHeader(Uint8List header) {
   return TcpHandShake(index, decodedHeader);
 }
 
-extension IterableExtension<T> on Iterable<T> {
-  T firstOrNull() {
+extension IterableExtension<T> on Iterable<T?> {
+  T? firstOrNull() {
     return firstWhere((_) => false, orElse: () => null);
   }
 }
 
 class RosSubscriber<Message extends RosMessage> {
   final Map<String, Socket> _connections = {};
-  StreamController<Message> _valueUpdate;
+  final StreamController<Message> _valueUpdate;
   RosConfig config;
 
   final RosTopic<Message> topic;
-  Stream<Message> onValueUpdate;
+  late final Stream<Message> onValueUpdate;
 
-  RosSubscriber(this.topic, this.config) {
-    _valueUpdate = StreamController<Message>();
+  RosSubscriber(this.topic, this.config)
+      : _valueUpdate = StreamController<Message>() {
     onValueUpdate = _valueUpdate.stream.asBroadcastStream();
   }
 
@@ -165,7 +165,7 @@ class RosSubscriber<Message extends RosMessage> {
   Future<void> _connectWithPublisher(String connection) async {
     dynamic response;
     try {
-      response = await xml_rpc.call(connection, 'requestTopic', [
+      response = await xml_rpc.call(Uri.parse(connection), 'requestTopic', [
         '/${config.name}',
         '/${topic.name}',
         [
@@ -173,7 +173,12 @@ class RosSubscriber<Message extends RosMessage> {
         ]
       ]);
     } on SocketException catch (e) {
-      if (e.osError.errorCode == 1225) {
+      var osErr = e.osError;
+      if(osErr == null)
+      {
+        rethrow;
+      }
+      if (osErr.errorCode == 1225) {
         return;
       }
       rethrow;
@@ -188,16 +193,19 @@ class RosSubscriber<Message extends RosMessage> {
     final protocol =
         ProtocolInfo(response[2][0], (response[2] as List<dynamic>).sublist(1));
 
-    Socket socket;
+    Socket? socket;
     switch (protocol.name) {
       case 'TCPROS':
         socket = await establishTCPROSConnection(protocol);
         break;
     }
 
-    assert(socket != null);
+    if(socket == null)
+    {
+      throw 'Could not establish a connection with publisher';
+    }
 
-    _connections.putIfAbsent(connection, () => socket);
+    _connections.putIfAbsent(connection, () => socket!);
   }
 
   Future<void> forceStop() {

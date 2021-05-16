@@ -7,30 +7,30 @@ import 'type_apis/int_apis.dart';
 class RosPublisher {
   final List<Socket> _subscribers = <Socket>[];
   final RosTopic topic;
-  ServerSocket _tcprosServer;
-  Timer _publishTimer;
+  ServerSocket? _tcprosServer;
+  Timer? _publishTimer;
 
   Duration _publishInterval;
   Duration get publishInterval => _publishInterval;
 
-  ///Changing publishing interval stops publishing 
+  ///Changing publishing interval stops publishing
   set publishInterval(Duration value) {
     _publishInterval = value;
     _publishTimer?.cancel();
     stopPublishing();
   }
 
-  int get port => _tcprosServer.port;
+  int? get port => _tcprosServer?.port;
 
-  String get address => _tcprosServer.address.address;
+  String? get address => _tcprosServer?.address.address;
 
   ///If [port] is ommited, it will be selected at random by ServerSocket.bind
   ///You can disable automatic start of publishing data by passing false to [publish]
   RosPublisher(this.topic, dynamic host,
-      {int port, Duration publishInterval, bool publish = true})
+      {int? port, Duration? publishInterval, bool publish = true})
       : assert(
-            host.runtimeType == String || host.runtimeType == InternetAddress) {
-    this.publishInterval = publishInterval ?? Duration(seconds: 1);
+            host.runtimeType == String || host.runtimeType == InternetAddress),
+        _publishInterval = publishInterval ?? Duration(seconds: 1) {
     if (publish) {
       startPublishing();
     }
@@ -57,16 +57,20 @@ class RosPublisher {
   }
 
   void stopPublishing() {
-    if (_publishTimer != null) {
-      _publishTimer.cancel();
+    var timer = _publishTimer;
+    if (timer != null) {
+      timer.cancel();
     }
   }
 
   Future<void> close() async {
     stopPublishing();
     await Future.wait(_subscribers.map((subscriber) => subscriber.close()));
-    await _tcprosServer.close();
-    _tcprosServer = null;
+    var server = _tcprosServer;
+    if (server != null) {
+      await server.close();
+      _tcprosServer = null;
+    }
   }
 
   Future<void> publishData() async {
