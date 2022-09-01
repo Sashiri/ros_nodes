@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   xmlrpc_server:
-    git: git://github.com/Sashiri/xmlrpc_server.git
+    git: https://github.com/Sashiri/xmlrpc_server.git
 
 dev_dependencies:
   pedantic: ^1.8.0
