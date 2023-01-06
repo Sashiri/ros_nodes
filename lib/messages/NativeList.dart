@@ -20,9 +20,10 @@ abstract class NativeList<T extends TypedData> implements BinaryConvertable {
   int fromBytes(Uint8List bytes, {int offset = 0}) {
     int sizeInBytes;
     int bytesUsed;
-    var _len = fixedLength; 
+    final _len = fixedLength;
     if (_len == null) {
-      sizeInBytes = bytes.buffer.asByteData().getUint32(offset, Endian.little);
+      sizeInBytes = bytes.buffer.asByteData().getUint32(offset, Endian.little) *
+          list.elementSizeInBytes;
       bytesUsed = sizeInBytes + 4;
       offset += 4;
     } else {
