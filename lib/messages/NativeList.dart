@@ -21,7 +21,8 @@ abstract class NativeList<T extends TypedData> implements BinaryConvertable {
     int sizeInBytes;
     int bytesUsed;
     if (fixedLength == null) {
-      sizeInBytes = bytes.buffer.asByteData().getUint32(offset, Endian.little);
+      sizeInBytes = bytes.buffer.asByteData().getUint32(offset, Endian.little) *
+          list.elementSizeInBytes;
       bytesUsed = sizeInBytes + 4;
       offset += 4;
     } else {
